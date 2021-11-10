@@ -2,6 +2,8 @@ add_library(VirtualTelescope SHARED VirtualTelescope.cpp
                                     VirtualTelescope.h
         PointModel.h
         PointModel.cpp
+        IERS.h
+        IERS.cpp
         )
 
 
@@ -14,5 +16,5 @@ target_link_directories(VirtualTelescope PUBLIC /opt/gcs/ext/sla/lib/linux)
 target_include_directories(VirtualTelescope PUBLIC /opt/gcs/ext/tcsPK/include/)
 target_link_directories(VirtualTelescope PUBLIC /opt/gcs/ext/tcsPK/lib/linux)
 
-add_executable(main main.cpp PointModel.cpp PointModel.h)
+add_executable(main main.cpp PointModel.cpp PointModel.h IERS.cpp IERS.h)
 target_link_libraries(main VirtualTelescope gsl gslcblas tcsPK slalib sla  )

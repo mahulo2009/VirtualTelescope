@@ -13,7 +13,7 @@
 namespace  vt {
     namespace  main {
 
-        struct GeoData
+        struct GeoDataParams
         {
             //Input
             double meanLon;
@@ -39,6 +39,8 @@ namespace  vt {
             double gimbalX;
             double gimbalY;
             double gimbalZ;
+            bool belowPole=false;
+            double aux[3]; //todo initilize
             //Output
             double azElToNominalMount[3][3];
         };
@@ -74,40 +76,85 @@ namespace  vt {
             double rotatorSPM2_i[3][3];
         };
 
-        struct PointingModel
+        struct WeatherStation {
+            double temperature; //todo setter.
+            double pressure; //todo setter.
+            double humidity; //todo setter.
+            double troposphereLapse; //todo setter.
+        };
+
+        struct IERS {
+            double polarMotionX; //todo setter.
+            double polarMotionY; //todo setter.
+            double ut1ToUtc; //todo setter.
+            double taiToUtc; //todo setter.
+            double ttToTai; //todo setter
+        };
+
+        struct PointModel
         {
-            static const int nameLength = 9;
-            static const int DEF_MAXT = 100;
-            static const int DEF_NTROOM = 100;
             int maxTerms;
             int ntRoom;
-            //Array1D<int> model; todo
+            int model[100];
+            double coefValues[100];
             int numLocalTerms;
             int numExplTerms;
             int numTerms;
-            //Array2D<char> coefNames; todo
-            //Array2D<char> coefFormat; todo
-            //Array1D<double> coefValues; todo
-            double guidingA;
-            double guidingB;
+            char coefNames[100][9];
+            char coefFormat[100][9];
         };
 
+        struct Target {
+            FRAMETYPE frame;
+            double equinox;
+            double waveLen;
+        };
+
+        struct TelescopeStatus {
+            double demandedRollTarget_;
+            double demandedPitchTarget_;
+        };
 
         class VirtualTelescope {
-        public:
-            VirtualTelescope(const GeoData &geoData, const TelescopeParams & params);
 
-            virtual void init (const double tai);
-            virtual void slowUpdate(double tai,double taiMjd);
-            virtual void mediumUpdate(double tai,double taiMjd);
+            public:
 
-        private:
+                VirtualTelescope(const GeoDataParams &geoData, const TelescopeParams & params);
 
-            GeoData geoData_;
-            TelescopeParams telescopeParams_;
-            TargetIndependentContext *slowCtx_;
-            TargetDependentContext *aux_mediumCtx_;
-            PointingModel *pointingModel_;
+                virtual void init ();
+                virtual void slowUpdate();
+                virtual void mediumUpdate();
+
+                void vtSkyToEnc (double sky_roll, double sky_pitch,
+                                 double po_x, double po_y,
+                                 double pred_roll, double pred_pitch, double pred_rma,
+                                 double tai,
+                                 double& enc_roll, double& enc_pitch, double& enc_rma) const;
+
+                void vtEncToSky (double mount_roll, double mount_pitch, double rma,
+                                               double po_x, double po_y,
+                                               double tai,
+                                               double& sky_longitude, double& sky_latitude) const;
+
+                void vtSkyToPointOrig (double sky_longitude, double sky_latitude,
+                                                     double mount_roll, double mount_pitch, double rma,
+                                                     double tai,
+                                                     double& po_x, double& po_y) const;
+
+            private:
+                //Params
+                GeoDataParams geoData_;
+                TelescopeParams telescopeParams_;
+                //Context
+                TargetIndependentContext slowCtx_;
+                TargetDependentContext mediumCtx_;
+                //Variables
+                double taiMjd_;
+                IERS iers_;
+                WeatherStation weather_;
+                PointModel pointingModel_;
+                Target target_,pointOrig_;
+                TelescopeStatus telescopeStatus_;
         };
     }
 }

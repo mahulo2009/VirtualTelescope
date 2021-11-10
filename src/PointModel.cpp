@@ -13,6 +13,9 @@
 
 void PointModel::read(const std::string &path) {
 
+    maxTerms=100;
+    ntRoom=100;
+
     pointModelTokeType_  = caption;
 
     std::ifstream file(path);
@@ -72,15 +75,7 @@ void PointModel::print() {
 
 void PointModel::fetch() {
     std::cout << "0" << std::endl;
-    int maxTerms=100;
-    int ntRoom=100;
-    int model[100];
-    int numLocalTerms;
-    int numExplTerms;
-    int numTerms;
-    char coefNames[100][9];
-    char coefFormat[100][9];
-    double coefValues[100];
+
 
     int res = tptMinit (maxTerms, ntRoom, model,
                         &numLocalTerms, &numExplTerms, &numTerms, coefNames);

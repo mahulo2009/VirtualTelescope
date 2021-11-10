@@ -21,6 +21,16 @@ public:
     void print();
     void fetch();
 
+    int maxTerms;
+    int ntRoom;
+    int model[100];
+    double coefValues[100];
+    int numLocalTerms;
+    int numExplTerms;
+    int numTerms;
+    char coefNames[100][9];
+    char coefFormat[100][9];
+
 private:
 
     enum PointModelTokeType { caption, method, term,end };
