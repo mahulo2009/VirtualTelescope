@@ -9,6 +9,7 @@
 #define AMPRMS_SZ  21
 
 #include "tcs.h"
+#include "PointModel.h"
 
 namespace  vt {
     namespace  main {
@@ -33,7 +34,7 @@ namespace  vt {
             //Input
             double focal_len;
             double plate_scale;
-            double distortion;
+            double distortionCoefficient;
             double refWaveLen;
             MTYPE mountType;
             double gimbalX;
@@ -77,37 +78,41 @@ namespace  vt {
         };
 
         struct WeatherStation {
-            double temperature; //todo setter.
-            double pressure; //todo setter.
-            double humidity; //todo setter.
-            double troposphereLapse; //todo setter.
+            double temperature;
+            double pressure;
+            double humidity;
+            double troposphereLapse;
         };
 
         struct IERS {
-            double polarMotionX; //todo setter.
-            double polarMotionY; //todo setter.
-            double ut1ToUtc; //todo setter.
-            double taiToUtc; //todo setter.
-            double ttToTai; //todo setter
+            double polarMotionX;
+            double polarMotionY;
+            double ut1ToUtc;
+            double taiToUtc;
+            double ttToTai;
         };
-
+/*
         struct PointModel
         {
             int maxTerms;
             int ntRoom;
             int model[100];
-            double coefValues[100];
             int numLocalTerms;
             int numExplTerms;
             int numTerms;
             char coefNames[100][9];
             char coefFormat[100][9];
+            double coefValues[100];
+            double guidingA;
+            double guidingB;
         };
-
+*/
         struct Target {
             FRAMETYPE frame;
             double equinox;
             double waveLen;
+            ROTLOC focalStation;
+            double ipa;
         };
 
         struct TelescopeStatus {
@@ -125,36 +130,66 @@ namespace  vt {
                 virtual void slowUpdate();
                 virtual void mediumUpdate();
 
+                void setIers(const IERS &iers);
+                void setWeather(const WeatherStation &weather);
+                void setPointingModel(const PointModel &pointingModel);
+                void setTelescopeStatus(const TelescopeStatus &telescopeStatus);
+                void setTaiMjd(double taiMjd);
+
                 void vtSkyToEnc (double sky_roll, double sky_pitch,
-                                 double po_x, double po_y,
-                                 double pred_roll, double pred_pitch, double pred_rma,
-                                 double tai,
-                                 double& enc_roll, double& enc_pitch, double& enc_rma) const;
+                                    double po_x, double po_y,
+                                    double& enc_roll, double& enc_pitch, double& enc_rma,
+                                    int max_iterations) const;
 
-                void vtEncToSky (double mount_roll, double mount_pitch, double rma,
-                                               double po_x, double po_y,
-                                               double tai,
-                                               double& sky_longitude, double& sky_latitude) const;
+            /*
 
-                void vtSkyToPointOrig (double sky_longitude, double sky_latitude,
-                                                     double mount_roll, double mount_pitch, double rma,
-                                                     double tai,
-                                                     double& po_x, double& po_y) const;
+            void vtSkyToEnc (double sky_roll, double sky_pitch,
+                             double po_x, double po_y,
+                             double pred_roll, double pred_pitch, double pred_rma,
+                             double tai,
+                             double& enc_roll, double& enc_pitch, double& enc_rma) const;
 
-            private:
-                //Params
-                GeoDataParams geoData_;
-                TelescopeParams telescopeParams_;
-                //Context
-                TargetIndependentContext slowCtx_;
-                TargetDependentContext mediumCtx_;
-                //Variables
-                double taiMjd_;
-                IERS iers_;
-                WeatherStation weather_;
-                PointModel pointingModel_;
-                Target target_,pointOrig_;
-                TelescopeStatus telescopeStatus_;
+
+            void vtSkyToPointOrig (double sky_longitude, double sky_latitude,
+                                                 double mount_roll, double mount_pitch, double rma,
+                                                 double tai,
+                                                 double& po_x, double& po_y) const;
+                                                 */
+
+        private:
+
+
+            void convertFocalPlaneMmToRad_ (double mm_x, double mm_y,
+                                                          double& rad_x, double& rad_y) const;
+
+            void removeFocalPlaneDistortion_ (double x0, double y0,
+                                                            double& x, double& y) const;
+            //Params
+            GeoDataParams geoData_;
+            TelescopeParams telescopeParams_;
+
+            //Context
+            TargetIndependentContext slowCtx_;
+            TargetDependentContext mediumCtx_;
+
+            //Variables
+            double taiMjd_;
+            double sideralTime_;
+        public:
+            void setSideralTime(double sideralTime);
+
+        private:
+            IERS iers_;
+            WeatherStation weather_;
+            PointModel pointingModel_;
+            Target target_,pointOrig_;
+        public:
+            void setTarget(const Target &target);
+
+            void setPointOrig(const Target &pointOrig);
+
+        private:
+            TelescopeStatus telescopeStatus_;
         };
     }
 }

@@ -31,6 +31,9 @@ public:
     char coefNames[100][9];
     char coefFormat[100][9];
 
+    double guidingA;
+    double guidingB;
+
 private:
 
     enum PointModelTokeType { caption, method, term,end };

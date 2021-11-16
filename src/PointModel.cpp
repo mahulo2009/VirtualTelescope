@@ -15,6 +15,7 @@ void PointModel::read(const std::string &path) {
 
     maxTerms=100;
     ntRoom=100;
+    guidingA=guidingB=0.0;
 
     pointModelTokeType_  = caption;
 
@@ -43,7 +44,7 @@ void PointModel::processTerm_(std::string &token) {
     if (std::distance(it,end)!=3) {
         throw std::invalid_argument("");
     }
-    PointModelTerm term = {*it,std::stod(*(++it))};
+    PointModelTerm term = {*it,std::stod(*(++it))* AS2R};
     terms_.push_back(term);
 }
 
@@ -74,8 +75,6 @@ void PointModel::print() {
 }
 
 void PointModel::fetch() {
-    std::cout << "0" << std::endl;
-
 
     int res = tptMinit (maxTerms, ntRoom, model,
                         &numLocalTerms, &numExplTerms, &numTerms, coefNames);
@@ -87,11 +86,12 @@ void PointModel::fetch() {
 
         //std::cout << "rest " << res << std::endl;
     }
-
+/*
     std::cout << "numTerms " << numTerms << std::endl;
     for (int i=0;i< numTerms;i++) {
         std::cout << model[i] << " " << coefNames[i]  <<" " <<coefValues[i] << std::endl;
     }
+    */
 }
 
 std::ostream &operator<<(std::ostream &os,const PointModel::PointModelTerm  &t) {
