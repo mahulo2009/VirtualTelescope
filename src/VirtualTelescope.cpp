@@ -17,18 +17,38 @@ vt::main::VirtualTelescope::VirtualTelescope(const GeoDataParams &geoData,
 void vt::main::VirtualTelescope::init() {
 
     //call to the tcsInit2 function
-    tcsInit2 (geoData_.meanLon, geoData_.meanLat,
-              iers_.polarMotionX, iers_.polarMotionY,
-              geoData_.height,
-              telescopeParams_.mountType,
-              telescopeParams_.gimbalZ, telescopeParams_.gimbalY, telescopeParams_.gimbalX,
-              telescopeParams_.azElToNominalMount,
-              &geoData_.trueLon, &geoData_.trueLat,
-              &geoData_.axisDistanceAu, &geoData_.equatorDistanceAu,
-              &geoData_.axisDistanceKm, &geoData_.equatorDistanceKm,
-              &geoData_.diurnalAberration);
+    int ret=tcsInit2 (
+              //Input
+              geoData_.meanLon,                        //site mean east longitude [radians]
+              geoData_.meanLat,                        //site mean geodetic latitude [radians]
+              iers_.polarMotionX,                      //polar-motion x angle [radians]
+              iers_.polarMotionY,                      //polar-motion y angle [radians]
+              geoData_.height,                         //site elevation, meters above sea-level. [meter]
+              telescopeParams_.mountType,              //mount type altazimutal.
+              telescopeParams_.gimbalZ,                //0 for altazimutal
+              telescopeParams_.gimbalY,                //0 for altazimutal
+              telescopeParams_.gimbalX,                //0 for altazimutal
+              //Output
+              telescopeParams_.azElToNominalMount,     //rotation matrix, [Az,El] to nominal mount.
+              &geoData_.trueLon,                       //telescope longitude true [radians]
+              &geoData_.trueLat,                       //telescope latitude true [radians]
+              &geoData_.axisDistanceAu,                //distance from spin axis [AU]
+              &geoData_.equatorDistanceAu,             //distance from equator [AU]
+              &geoData_.axisDistanceKm,                //distance from spin axis [km]
+              &geoData_.equatorDistanceKm,             //distance from equator [km]
+              &geoData_.diurnalAberration);            //diurnal aberration [radians]
 
-    std::cout << "----------------------------" << std::endl;
+    std::cout << "----------------------------VirtualTelescope::init" << std::endl;
+
+    std::cout << "oK "<< ret << std::endl;
+
+    for (auto &row : telescopeParams_.azElToNominalMount) {
+        for (auto x : row) {
+            std::cout <<  x << "\t";
+        }
+        std::cout << std::endl;
+    }
+
     std::cout << "geoData_.trueLon " << geoData_.trueLon << std::endl;
     std::cout << "geoData_.trueLat " << geoData_.trueLat<< std::endl;
     std::cout << "geoData_.axisDistanceAu "<< geoData_.axisDistanceAu<< std::endl;
@@ -36,7 +56,7 @@ void vt::main::VirtualTelescope::init() {
     std::cout << "geoData_.equatorDistanceAu " << geoData_.equatorDistanceAu<< std::endl;
     std::cout << "geoData_.equatorDistanceKm " << geoData_.equatorDistanceKm<< std::endl;
     std::cout << "geoData_.diurnalAberration " << geoData_.diurnalAberration<< std::endl;
-    std::cout << "----------------------------" << std::endl;
+    std::cout << "----------------------------VirtualTelescope::init END" << std::endl;
 
 }
 
@@ -49,27 +69,27 @@ void vt::main::VirtualTelescope::slowUpdate() {
     std::cout << "----------------------------" << std::endl;
 
     tcsSlow (
-            //input parameters
-            taiMjd_,  //atomic time
-            geoData_.height, //height above sea level
-            iers_.ut1ToUtc, //IERS bulletin, UT1-UTC
-            iers_.taiToUtc, //idem, TAI-UTC
-            iers_.ttToTai,  //idem, TT-TAI
-            weather_.temperature, //refraction data
-            weather_.pressure, //refraction data
-            weather_.humidity, //refraction data
-            weather_.troposphereLapse, //refraction data, tropospheric lapse rate
-            telescopeParams_.refWaveLen, //telescope reference wave length (in general, not current target)
-            geoData_.trueLon, //true site longitude, corrected from polar motion
-            geoData_.trueLat, //true site latitude, corrected from polar motion
-            //output parameters
-            &slowCtx_.refTAI, //TAI at reference epoch, for interpolations
-            &slowCtx_.refLAST, //local aparent sidereal time at refTAI
-            &slowCtx_.refTT, //Terrestrial Time at refTAI
-            &slowCtx_.refTTJ, //Julian TT at refTAI
-            slowCtx_.amprms, //target independent astrometric transformation values
-            &slowCtx_.refrA, //refraction model A coefficient
-            &slowCtx_.refrB  //refraction model B cofficient
+            //Input
+            taiMjd_,                        //time (TAI Modified Julian Data, JD-2000000.5) [seconds] //todo review this value differnt in maedium (comment)
+            geoData_.height,                //site elevation, meters above sea-level [meter].
+            iers_.ut1ToUtc,                 //current UT1-UTC [day]
+            iers_.taiToUtc,                 //TAI-UTC [day]
+            iers_.ttToTai,                  //TT-TAI [day]
+            weather_.temperature,           //ambient temperature [K]
+            weather_.pressure,              //pressure [mb=hPa]
+            weather_.humidity,              //relative humidity [0-1]
+            weather_.troposphereLapse,      //tropospheric lapse rate [K per meter]
+            telescopeParams_.refWaveLen,    //reference wavelength [micrometers]
+            geoData_.trueLon,               //telescope longitude true
+            geoData_.trueLat,               //telescope latitude true
+            //Output
+            &slowCtx_.refTAI,               //reference epoch [TAI MDJ]
+            &slowCtx_.refLAST,              //LAST at reference epoch [radians]
+            &slowCtx_.refTT,                //TT at reference epoch [MJD]
+            &slowCtx_.refTTJ,               //TT at reference epoch [Julian Epoch]
+            slowCtx_.amprms,                //target independent MAP parameters
+            &slowCtx_.refrA,                //target refraction constant
+            &slowCtx_.refrB                 //tan refraction constant
     );
 
     std::cout << "----------------------------" << std::endl;
@@ -91,63 +111,74 @@ void vt::main::VirtualTelescope::mediumUpdate() {
 
     //todo
     double targetCoordenates_[] = {0, 1.55334} ;
-    tcsMedium (
-            //input parameters
-            taiMjd_, //atomic time
-            pointingModel_.maxTerms,  //pointing model, max terms
-            pointingModel_.model,  //idem, model coefficient list
-            pointingModel_.coefValues, //idem, coefficient values
-            pointingModel_.numLocalTerms, //idem, number of local terms in the model
-            pointingModel_.numExplTerms,  //idem, number of explicit terms in the model
-            pointingModel_.numTerms,      //idem, total number of terms
-            pointingModel_.coefNames, //idem, coefficient names
-            pointingModel_.coefFormat, //idem, coefficient format
-            telescopeParams_.mountType, //mount params, mount type
-            telescopeParams_.azElToNominalMount, //idem, nominal rotation matrix from Az/El to mount
-            telescopeStatus_.demandedRollTarget_, //idem, current roll demand
-            telescopeStatus_.demandedPitchTarget_, //idem, current pitch demand
-            telescopeParams_.belowPole, //idem, below/above pole selector
-            telescopeParams_.aux, //idem, auxiliary readings (??)
-            target_.frame,//target, reference frame info
-            target_.equinox, //target
-            target_.waveLen, //target
-            pointOrig_.frame, //rotator orientation frame
-            pointOrig_.equinox,
-            pointOrig_.waveLen,
-            targetCoordenates_ ,
-            slowCtx_.refTAI, //reference time
-            slowCtx_.refLAST, //local sidereal time at reference time
-            slowCtx_.refTTJ, //Julian TT at reference time
-            weather_.temperature, //refraction data
-            weather_.pressure, //refraction data
-            weather_.humidity, //refraction data
-            weather_.troposphereLapse, //refraction data, tropospheric lapse rate
-            telescopeParams_.refWaveLen, //generic reference wavelength (not the target's one)
-            slowCtx_.refrA, //refraction data, A coeff
-            slowCtx_.refrB, //refraction data, B coeff
-            NULL, //NULL, because we use default refraction model
-            geoData_.height, //site data
-            geoData_.trueLat,
-            geoData_.diurnalAberration,
-            slowCtx_.amprms, //target independent transformation values
-            //output
-            &mediumCtx_.ia, //corrections to pointing model
-            &mediumCtx_.ib,
-            &mediumCtx_.np,
-            &mediumCtx_.xt, //telescope vector, 3 components
-            &mediumCtx_.yt,
-            &mediumCtx_.zt,
-            mediumCtx_.azElToMount, //true azimuth/elevation to mount rotation matrix
-            mediumCtx_.mountSPM1, //Sky Patch matrices and inverses
-            mediumCtx_.mountSPM1_i,
-            mediumCtx_.mountSPM2,
-            mediumCtx_.mountSPM2_i,
-            mediumCtx_.rotatorSPM1,
-            mediumCtx_.rotatorSPM1_i,
-            mediumCtx_.rotatorSPM2,
-            mediumCtx_.rotatorSPM2_i
+
+    int ret= tcsMedium (
+            //Input
+            //Current Time
+            taiMjd_,                                //time (TAI Julian Data, JD-2400000.5) [seconds] //todo review this value differnt in maedium (comment)
+            //Pointing Model
+            pointingModel_.maxTerms,                //maximum number of terms in model
+            pointingModel_.model,                   //term number fo current model (0 = end)
+            pointingModel_.coefValues,              //coefficient values
+            pointingModel_.numLocalTerms,           //number of local terms
+            pointingModel_.numExplTerms,            //number of terms implemented explicitly (local + standard)
+            pointingModel_.numTerms,                //number of terms available currently (local + standard + generic)
+            pointingModel_.coefNames,               //coefficient names (local + standard + generic)
+            pointingModel_.coefFormat,              //format of generic terms added to coeffn
+            //Mount
+            telescopeParams_.mountType,             //mount type
+            telescopeParams_.azElToNominalMount,    //rotation matrix [Az/El] to nominal mount
+            telescopeStatus_.demandedRollTarget_,   //demanded mount roll (radians, right handed)
+            telescopeStatus_.demandedPitchTarget_,  //demanded mount pitch (radians)
+            telescopeParams_.belowPole,             //TRUE = "below the pole"
+            telescopeParams_.aux,                   //auxiliary readings
+            //Frames
+            target_.frame,                          //mount frame type
+            target_.equinox,                        //mount frame equinox
+            target_.waveLen,                        //mount wavelength
+            pointOrig_.frame,                       //rotator orientation frame type
+            pointOrig_.equinox,                     //rotator orientation frame equinox
+            pointOrig_.waveLen,                     //rotator orientation wavelength
+            //Target
+            targetCoordenates_ ,                    //target coordinates
+            //Time-scales
+            slowCtx_.refTAI,                        //raw clock time at reference epoch
+            slowCtx_.refLAST,                       //LAST at reference epoch (radians)
+            slowCtx_.refTTJ,                        //TT at reference epoch (Julian epoch)
+            //Refraction
+            weather_.temperature,                   //ambient temperature [K]
+            weather_.pressure,                      //pressure [mb=hPa]
+            weather_.humidity,                      //relative humidity [0-1]
+            weather_.troposphereLapse,              //tropospheric lapse rate [K per meter]
+            telescopeParams_.refWaveLen,            //reference wavelength [micrometers]
+            slowCtx_.refrA,                         //tan refraction constant
+            slowCtx_.refrB,                         //tan refraction constant
+            NULL,                                   //optional refraction function
+            //Site
+            geoData_.height,                        //telescope height above sea level (meters)
+            geoData_.trueLat,                       //telescope true latitude (true)
+            geoData_.diurnalAberration,             //diurnal aberration (radians)
+            //Mean to apparent
+            slowCtx_.amprms,                        //target-independent MAP parameters
+            //Output
+            &mediumCtx_.ia,                         //roll zero point
+            &mediumCtx_.ib,                         //pitch zero point
+            &mediumCtx_.np,                         //mount axes nonperpendicularity
+            &mediumCtx_.xt,                         //telescope vector, x-component
+            &mediumCtx_.yt,                         //telescope vector, y-component
+            &mediumCtx_.zt,                         //telescope vector, z-component
+            mediumCtx_.azElToMount,                 //rotation matrix, [Az,El] to mount
+            mediumCtx_.mountSPM1,                   //SPM #1, mount
+            mediumCtx_.mountSPM1_i,                 //inverse SPM #1, mount
+            mediumCtx_.mountSPM2,                   //SPM #2, mount
+            mediumCtx_.mountSPM2_i,                 //inverse SPM #2, mount
+            mediumCtx_.rotatorSPM1,                 //SPM #1, rotator
+            mediumCtx_.rotatorSPM1_i,               //inverse SPM #1, rotator
+            mediumCtx_.rotatorSPM2,                 //SPM #2, rotator
+            mediumCtx_.rotatorSPM2_i                //inverse SPM #2, rotator
     );
 
+    std::cout << "oK "<< ret << std::endl;
     std::cout << "----------------------------" << std::endl;
     std::cout << "telescopeStatus_.demandedRollTarget_ " << telescopeStatus_.demandedRollTarget_ << std::endl;
     std::cout << "telescopeStatus_.demandedPitchTarget_ " << telescopeStatus_.demandedPitchTarget_ << std::endl;
@@ -157,9 +188,13 @@ void vt::main::VirtualTelescope::mediumUpdate() {
 
 }
 
-void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll, double sky_pitch,
-                                             double po_x, double po_y,
-                                             double& enc_roll, double& enc_pitch, double& enc_rma,
+void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll,
+                                             double sky_pitch,
+                                             double po_x,
+                                             double po_y,
+                                             double& enc_roll,
+                                             double& enc_pitch,
+                                             double& enc_rma,
                                              int max_iterations) const {
 
     double aimvect[3];
@@ -174,24 +209,37 @@ void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll, double sky_pitch,
     {
         int retval;
         tcsTrack (
-                sky_roll,
-                sky_pitch,
-                const_cast<double (*)[3]>(mediumCtx_.mountSPM1),
-                target_.frame,
-                sin(sideralTime_), cos(sideralTime_),
-                const_cast<double (*)[3]>(mediumCtx_.mountSPM2),
-                pointOrig_.focalStation,
-                newrma,
-                newroll,
-                newpitch,
-                po_x, po_y, //todo scale
-                mediumCtx_.ia, mediumCtx_.ib, mediumCtx_.np,
-                mediumCtx_.xt, mediumCtx_.yt, mediumCtx_.zt,
-                pointingModel_.guidingA, pointingModel_.guidingB,
-                0, //pole avoidance, set to 0 because we want to convert coordinates, not generate demands
-                &aimvect[0], &aimvect[1], &aimvect[2],
-                &newroll1, &newpitch1, //first solution pair
-                &newroll2, &newpitch2, //second solution pair
+                //Input
+                sky_roll,                                            //target "roll" coordinate
+                sky_pitch,                                           //target "pitch" coordinate
+                const_cast<double (*)[3]>(mediumCtx_.mountSPM1),     //SPM #1, mount
+                target_.frame,                                       //reference frame for the target
+                sin(sideralTime_),                                   //sine of sidereal time
+                cos(sideralTime_),                                   //cosine of sidereal time
+                const_cast<double (*)[3]>(mediumCtx_.mountSPM2),     //SPM #2, mount
+                pointOrig_.focalStation,                             //rotator location
+                newrma,                                              //predicted rotator mechanical angle
+                newroll,                                             //predicted roll
+                newpitch,                                            //predicted pitch
+                po_x,                                                //pointing origin x (in focal lengths) //todo scale
+                po_y,                                                //pointing origin y (in focal lengths) //todo scale
+                mediumCtx_.ia,                                       //roll zero point
+                mediumCtx_.ib,                                       //pitch zero point
+                mediumCtx_.np,                                       //mount axes nonperpendicularity
+                mediumCtx_.xt,                                       //telescope vector, x-component
+                mediumCtx_.yt,                                       //telescope vector, y-component
+                mediumCtx_.zt,                                       //telescope vector, z-component
+                pointingModel_.guidingA,                             //guiding correction, collimation
+                pointingModel_.guidingB,                             //guiding correction, pitch
+                0,                                                   //radius of "no go" region
+                //Output
+                &aimvect[0],                                         //AIM x-coordinate
+                &aimvect[1],                                         //AIM y-coordinate
+                &aimvect[2],                                         //AIM z-coordinate
+                &newroll1,                                           //roll coordinate, first solution
+                &newpitch1,                                          //pitch coordinate, first solution
+                &newroll2,                                           //roll coordinate, second solution
+                &newpitch2,                                          //pitch coordinate, second solution
                 &retval
         );
 
@@ -199,16 +247,26 @@ void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll, double sky_pitch,
         newpitch = telescopeParams_.belowPole ? newpitch2 : newpitch1;
 
         tcsRotator (
-                aimvect[0], aimvect[1], aimvect[2],
-                pointOrig_.focalStation,
+                aimvect[0],                 //AIM x-coordinate
+                aimvect[1],                 //AIM y-coordinate
+                aimvect[2],                 //AIM z-coordinate
+                pointOrig_.focalStation,    //rotator location
                 newrma,
                 0, //pole avoidance, set to 0 because we want to convert coordinates, not generate demands
-                enc_roll, enc_pitch,
-                po_x, po_y, //todo scale
-                mediumCtx_.ia, mediumCtx_.ib, mediumCtx_.np,
-                mediumCtx_.xt, mediumCtx_.yt, mediumCtx_.zt,
-                pointingModel_.guidingA, pointingModel_.guidingB,
-                0.0, 1.0, //we handle the instrument alignment angle in the DoF class
+                enc_roll,
+                enc_pitch,
+                po_x,
+                po_y, //todo scale
+                mediumCtx_.ia,
+                mediumCtx_.ib,
+                mediumCtx_.np,
+                mediumCtx_.xt,
+                mediumCtx_.yt,
+                mediumCtx_.zt,
+                pointingModel_.guidingA,
+                pointingModel_.guidingB,
+                0.0,
+                1.0, //we handle the instrument alignment angle in the DoF class
                 const_cast<double (*)[3]>(mediumCtx_.rotatorSPM1_i),
                 pointOrig_.frame,
                 sin(sideralTime_), cos(sideralTime_),

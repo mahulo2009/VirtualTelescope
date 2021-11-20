@@ -33,8 +33,8 @@ int main()
     telescopeParams.aux[0]=telescopeParams.aux[1]=telescopeParams.aux[2]=0.0;
 
     vt::main::VirtualTelescope vt(geoDataParams,telescopeParams);
-    vt.setIers({8.62145e-321,
-                2.77171e-321,
+    vt.setIers({0.1621 * GCS_AS2R,
+                0.2498 * GCS_AS2R,
                 -1.34082e-313, //TODO THIS VALUES NOT OK REVIEW
                 37.0/Day2Second,
                 32.184/Day2Second});
