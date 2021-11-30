@@ -5,6 +5,7 @@
 #include "VirtualTelescope.h"
 
 #include <iostream>
+#include <iomanip>
 #include "slalib.h"
 
 vt::main::VirtualTelescope::VirtualTelescope(const GeoDataParams &geoData,
@@ -15,6 +16,9 @@ vt::main::VirtualTelescope::VirtualTelescope(const GeoDataParams &geoData,
 }
 
 void vt::main::VirtualTelescope::init() {
+
+    //std::cout << "----------------------------VirtualTelescope::init" << std::endl;
+    //std::cout << std::setprecision(15) << std::endl;
 
     //call to the tcsInit2 function
     int ret=tcsInit2 (
@@ -37,36 +41,30 @@ void vt::main::VirtualTelescope::init() {
               &geoData_.axisDistanceKm,                //distance from spin axis [km]
               &geoData_.equatorDistanceKm,             //distance from equator [km]
               &geoData_.diurnalAberration);            //diurnal aberration [radians]
-
-    std::cout << "----------------------------VirtualTelescope::init" << std::endl;
-
-    std::cout << "oK "<< ret << std::endl;
-
-    for (auto &row : telescopeParams_.azElToNominalMount) {
-        for (auto x : row) {
-            std::cout <<  x << "\t";
-        }
-        std::cout << std::endl;
-    }
-
+/*
+    std::cout << "telescopeParams_.azElToNominalMount[0][0] " << telescopeParams_.azElToNominalMount[0][0] << std::endl;
     std::cout << "geoData_.trueLon " << geoData_.trueLon << std::endl;
     std::cout << "geoData_.trueLat " << geoData_.trueLat<< std::endl;
     std::cout << "geoData_.axisDistanceAu "<< geoData_.axisDistanceAu<< std::endl;
-    std::cout << "geoData_.axisDistanceKm "<< geoData_.axisDistanceKm<< std::endl;
     std::cout << "geoData_.equatorDistanceAu " << geoData_.equatorDistanceAu<< std::endl;
+    std::cout << "geoData_.axisDistanceKm "<< geoData_.axisDistanceKm<< std::endl;
     std::cout << "geoData_.equatorDistanceKm " << geoData_.equatorDistanceKm<< std::endl;
     std::cout << "geoData_.diurnalAberration " << geoData_.diurnalAberration<< std::endl;
-    std::cout << "----------------------------VirtualTelescope::init END" << std::endl;
 
+    std::cout << "----------------------------VirtualTelescope::init END" << std::endl;
+*/
 }
 
 void vt::main::VirtualTelescope::slowUpdate() {
 
-    std::cout << "----------------------------" << std::endl;
+    /*
+    std::cout << "----------------------------VirtualTelescope::slowUpdate" << std::endl;
+    std::cout << std::setprecision(15) << std::endl;
+
     std::cout << "iers_.ut1ToUtc " << iers_.ut1ToUtc << std::endl;
     std::cout << "iers_.taiToUtc " << iers_.taiToUtc << std::endl;
     std::cout << "iers_.ttToTai " << iers_.ttToTai << std::endl;
-    std::cout << "----------------------------" << std::endl;
+    */
 
     tcsSlow (
             //Input
@@ -92,27 +90,37 @@ void vt::main::VirtualTelescope::slowUpdate() {
             &slowCtx_.refrB                 //tan refraction constant
     );
 
-    std::cout << "----------------------------" << std::endl;
+    //todo for the moment we use this.
+
+    double delta = taiMjd_ - slowCtx_.refTAI;
+    sideralTime_ = slowCtx_.refLAST + delta*STRPD;
+
+
+
+/*
     std::cout << "slowCtx_.refTAI " << slowCtx_.refTAI << std::endl;
     std::cout << "slowCtx_.refLAST " << slowCtx_.refLAST << std::endl;
     std::cout << "slowCtx_.refTT " << slowCtx_.refTT << std::endl;
     std::cout << "slowCtx_.refTTJ " << slowCtx_.refTTJ << std::endl;
     std::cout << "slowCtx_.refrA " << slowCtx_.refrA << std::endl;
     std::cout << "slowCtx_.refrB " << slowCtx_.refrB << std::endl;
-    std::cout << "----------------------------" << std::endl;
 
+
+    std::cout << "----------------------------VirtualTelescope::slowUpdate END" << std::endl;
+*/
 
 }
 
 void vt::main::VirtualTelescope::mediumUpdate() {
+/*
+    std::cout << "----------------------------VirtualTelescope::mediumUpdate" << std::endl;
+    std::cout << std::setprecision(15) << std::endl;
 
-    std::cout << "----------------------------mediumUpdate" << std::endl;
-    std::cout << "pointingModel_.coefValues " << pointingModel_.coefValues[0] << std::endl;
+    std::cout << "taiMjd_ " << taiMjd_<< std::endl;
+    std::cout << "mountType " << telescopeParams_.mountType << std::endl;
+*/
 
-    //todo
-    double targetCoordenates_[] = {0, 1.55334} ;
-
-    int ret= tcsMedium (
+    int ret = tcsMedium (
             //Input
             //Current Time
             taiMjd_,                                //time (TAI Julian Data, JD-2400000.5) [seconds] //todo review this value differnt in maedium (comment)
@@ -177,15 +185,24 @@ void vt::main::VirtualTelescope::mediumUpdate() {
             mediumCtx_.rotatorSPM2,                 //SPM #2, rotator
             mediumCtx_.rotatorSPM2_i                //inverse SPM #2, rotator
     );
+/*
+    std::cout << mediumCtx_.ib<< std::endl;
+    std::cout << mediumCtx_.np<< std::endl;
+    std::cout << mediumCtx_.xt<< std::endl;
+    std::cout << mediumCtx_.yt<< std::endl;
+    std::cout << mediumCtx_.zt<< std::endl;
+    std::cout << mediumCtx_.azElToMount[0][0]<< std::endl;
+    std::cout << mediumCtx_.mountSPM1[0][0]<< std::endl;
+    std::cout << mediumCtx_.mountSPM1_i[0][0]<< std::endl;
+    std::cout << mediumCtx_.mountSPM2[0][0]<< std::endl;
+    std::cout << mediumCtx_.mountSPM2_i[0][0]<< std::endl;
+    std::cout << mediumCtx_.rotatorSPM1[0][0]<< std::endl;
+    std::cout << mediumCtx_.rotatorSPM1_i[0][0]<< std::endl;
+    std::cout << mediumCtx_.rotatorSPM2[0][0]<< std::endl;
+    std::cout << mediumCtx_.rotatorSPM2_i[0][0]<< std::endl;
 
-    std::cout << "oK "<< ret << std::endl;
-    std::cout << "----------------------------" << std::endl;
-    std::cout << "telescopeStatus_.demandedRollTarget_ " << telescopeStatus_.demandedRollTarget_ << std::endl;
-    std::cout << "telescopeStatus_.demandedPitchTarget_ " << telescopeStatus_.demandedPitchTarget_ << std::endl;
-
-    std::cout << "mediumCtx_.ia " << mediumCtx_.ia << std::endl;
-    std::cout << "----------------------------" << std::endl;
-
+    std::cout << "----------------------------VirtualTelescope::slowUpdate END" << std::endl;
+*/
 }
 
 void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll,
@@ -196,6 +213,8 @@ void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll,
                                              double& enc_pitch,
                                              double& enc_rma,
                                              int max_iterations) const {
+
+    //std::cout << "----------------------------VirtualTelescope::vtSkyToEnc" << std::endl;
 
     double aimvect[3];
     double newroll1, newpitch1;
@@ -247,33 +266,36 @@ void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll,
         newpitch = telescopeParams_.belowPole ? newpitch2 : newpitch1;
 
         tcsRotator (
-                aimvect[0],                 //AIM x-coordinate
-                aimvect[1],                 //AIM y-coordinate
-                aimvect[2],                 //AIM z-coordinate
-                pointOrig_.focalStation,    //rotator location
-                newrma,
-                0, //pole avoidance, set to 0 because we want to convert coordinates, not generate demands
-                enc_roll,
-                enc_pitch,
-                po_x,
-                po_y, //todo scale
-                mediumCtx_.ia,
-                mediumCtx_.ib,
-                mediumCtx_.np,
-                mediumCtx_.xt,
-                mediumCtx_.yt,
-                mediumCtx_.zt,
-                pointingModel_.guidingA,
-                pointingModel_.guidingB,
-                0.0,
-                1.0, //we handle the instrument alignment angle in the DoF class
-                const_cast<double (*)[3]>(mediumCtx_.rotatorSPM1_i),
-                pointOrig_.frame,
-                sin(sideralTime_), cos(sideralTime_),
-                const_cast<double (*)[3]>(mediumCtx_.rotatorSPM2_i),
-                pointOrig_.ipa,
-                &enc_rma,
-                &retval
+                //Input
+                aimvect[0],                                              //AIM x-coordinate
+                aimvect[1],                                             //AIM y-coordinate
+                aimvect[2],                                             //AIM z-coordinate
+                pointOrig_.focalStation,                                //rotator location
+                newrma,                                                 //predicted rotator demand
+                0,                                                      //FALSE/TRUE = above/below pole
+                enc_roll,                                               //demand roll
+                enc_pitch,                                              //demand pitch
+                po_x,                                                   //pointing-origin x (in focal lengths) todo scale
+                po_y,                                                   //pointing-origin y (in focal lengths) todo scale
+                mediumCtx_.ia,                                          //roll zero point
+                mediumCtx_.ib,                                          //pitch zero point
+                mediumCtx_.np,                                          //nonperpendicularity
+                mediumCtx_.xt,                                          //telescope vector, x-component
+                mediumCtx_.yt,                                          //telescope vector, y-component
+                mediumCtx_.zt,                                          //telescope vector, z-component
+                pointingModel_.guidingA,                                //guiding adjustment, collimation
+                pointingModel_.guidingB,                                //guiding adjustment, pitch
+                0.0,                                                    //sine of Instrument Alignment Angle
+                1.0,                                                    //cosine of Instrument Alignment Angle
+                const_cast<double (*)[3]>(mediumCtx_.rotatorSPM1_i),    //inverse SPM #1 for the rotator
+                pointOrig_.frame,                                       //rotator tracking frame ID
+                sin(sideralTime_),                                      //sine of sidereal time
+                cos(sideralTime_),                                      //cosine of sidereal time
+                const_cast<double (*)[3]>(mediumCtx_.rotatorSPM2_i),    //inverse SPM #2 for the rotator
+                pointOrig_.ipa,                                         //requested Instrument Position Angle
+                //Output
+                &enc_rma,                                               //required rotator mechanical angle
+                &retval                                                 //status: 0=OK
         );
 
         nIter++;
@@ -286,87 +308,15 @@ void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll,
             enc_rma = newrma;
         }
     }
-
-    std::cout << "solutionConverged " << solutionConverged << std::endl;
-
-}
-
 /*
-void vt::main::VirtualTelescope::vtEncToSky(double mount_roll, double mount_pitch, double rma,
-                                            double po_x, double po_y,
-                                            double tai,
-                                            double &sky_longitude, double &sky_latitude) const {
+    std::cout << "enc_roll " << enc_roll  << std::endl;
+    std::cout << "enc_pitch " << enc_pitch   << std::endl;
+    std::cout << "enc_rma " << enc_rma  << std::endl;
 
-    double scaled_poX, scaled_poY;
+    std::cout << "----------------------------VirtualTelescope::vtSkyToEnc END" << std::endl;
+    */
 
-    //convert pointing origin from millimeters to radians in the tangent plane
-    convertFocalPlaneMmToRad_ (po_x, po_y,
-                               scaled_poX, scaled_poY);
-
-    //correct for the focal plane distortion
-    removeFocalPlaneDistortion_ (scaled_poX, scaled_poY, scaled_poX, scaled_poY);
-
-
-    //make the transformation
-    tcsVTsky (
-            mount_roll,
-            mount_pitch,
-            pointOrig_.focalStation,
-            rma,
-            scaled_poX, scaled_poY,
-            const_cast<double (*)[3]>(mediumCtx_.mountSPM1_i),
-            target_.frame,
-            sin(sideralTime_), cos(sideralTime_),
-            const_cast<double (*)[3]>(mediumCtx_.mountSPM2_i),
-            mediumCtx_.ia, mediumCtx_.ib, mediumCtx_.np,
-            mediumCtx_.xt, mediumCtx_.yt, mediumCtx_.zt,
-            0.0,0.0,
-            &sky_longitude,
-            &sky_latitude
-    );
 }
-
-void vt::main::VirtualTelescope::vtSkyToPointOrig(double sky_longitude, double sky_latitude, double mount_roll,
-                                                  double mount_pitch, double rma, double tai, double &po_x,
-                                                  double &po_y) const {
-
-    double scaled_poX, scaled_poY;
-
-    int retval;
-    tcsVTxy (
-            sky_longitude,
-            sky_latitude,
-            const_cast<double (*)[3]>(mediumCtx_.mountSPM1),
-            target_.frame,
-            sin(sideralTime_), cos(sideralTime_),
-            const_cast<double (*)[3]>(mediumCtx_.mountSPM2),
-            pointOrig_.focalStation,
-            rma,
-            mount_roll,
-            mount_pitch,
-            mediumCtx_.ia, mediumCtx_.ib, mediumCtx_.np,
-            mediumCtx_.xt, mediumCtx_.yt, mediumCtx_.zt,
-            pointingModel_.guidingA, pointingModel_.guidingB,
-            &scaled_poX,
-            &scaled_poY,
-            &retval
-    );
-}
-*/
-
-void
-vt::main::VirtualTelescope::convertFocalPlaneMmToRad_(double mm_x, double mm_y, double &rad_x, double &rad_y) const {
-    rad_x = mm_x / telescopeParams_.plate_scale;
-    rad_y = mm_y / telescopeParams_.plate_scale;
-}
-
-void
-vt::main::VirtualTelescope::removeFocalPlaneDistortion_(double x0, double y0, double &x, double &y) const {
-    x = x0;
-    y = y0;
-    slaUnpcd (telescopeParams_.distortionCoefficient, &x, &y);
-}
-
 void vt::main::VirtualTelescope::setIers(const vt::main::IERS &iers) {
     iers_ = iers;
 }
@@ -394,7 +344,18 @@ void vt::main::VirtualTelescope::setTarget(const vt::main::Target &target) {
 void vt::main::VirtualTelescope::setPointOrig(const vt::main::Target &pointOrig) {
     pointOrig_ = pointOrig;
 }
-
+/*
 void vt::main::VirtualTelescope::setSideralTime(double sideralTime) {
     sideralTime_ = sideralTime;
 }
+*/
+
+void vt::main::VirtualTelescope::targetCoordenates(double targetCoordenates[2] ) {
+    targetCoordenates_[0]=targetCoordenates[0];
+    targetCoordenates_[1]=targetCoordenates[1];
+}
+
+double vt::main::VirtualTelescope::getSideralTime() const {
+    return sideralTime_;
+}
+

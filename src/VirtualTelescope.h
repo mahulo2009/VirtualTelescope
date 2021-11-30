@@ -91,22 +91,7 @@ namespace  vt {
             double taiToUtc;
             double ttToTai;
         };
-/*
-        struct PointModel
-        {
-            int maxTerms;
-            int ntRoom;
-            int model[100];
-            int numLocalTerms;
-            int numExplTerms;
-            int numTerms;
-            char coefNames[100][9];
-            char coefFormat[100][9];
-            double coefValues[100];
-            double guidingA;
-            double guidingB;
-        };
-*/
+
         struct Target {
             FRAMETYPE frame;
             double equinox;
@@ -135,35 +120,18 @@ namespace  vt {
                 void setPointingModel(const PointModel &pointingModel);
                 void setTelescopeStatus(const TelescopeStatus &telescopeStatus);
                 void setTaiMjd(double taiMjd);
+                //void setSideralTime(double sideralTime);
+                void setTarget(const Target &target);
+                void setPointOrig(const Target &pointOrig);
+                void targetCoordenates(double targetCoordenates[2]);
 
                 void vtSkyToEnc (double sky_roll, double sky_pitch,
                                     double po_x, double po_y,
                                     double& enc_roll, double& enc_pitch, double& enc_rma,
                                     int max_iterations) const;
 
-            /*
-
-            void vtSkyToEnc (double sky_roll, double sky_pitch,
-                             double po_x, double po_y,
-                             double pred_roll, double pred_pitch, double pred_rma,
-                             double tai,
-                             double& enc_roll, double& enc_pitch, double& enc_rma) const;
-
-
-            void vtSkyToPointOrig (double sky_longitude, double sky_latitude,
-                                                 double mount_roll, double mount_pitch, double rma,
-                                                 double tai,
-                                                 double& po_x, double& po_y) const;
-                                                 */
-
         private:
 
-
-            void convertFocalPlaneMmToRad_ (double mm_x, double mm_y,
-                                                          double& rad_x, double& rad_y) const;
-
-            void removeFocalPlaneDistortion_ (double x0, double y0,
-                                                            double& x, double& y) const;
             //Params
             GeoDataParams geoData_;
             TelescopeParams telescopeParams_;
@@ -176,20 +144,18 @@ namespace  vt {
             double taiMjd_;
             double sideralTime_;
         public:
-            void setSideralTime(double sideralTime);
+            double getSideralTime() const;
 
         private:
+
             IERS iers_;
             WeatherStation weather_;
             PointModel pointingModel_;
             Target target_,pointOrig_;
-        public:
-            void setTarget(const Target &target);
-
-            void setPointOrig(const Target &pointOrig);
-
-        private:
             TelescopeStatus telescopeStatus_;
+
+            double targetCoordenates_[2];
+
         };
     }
 }
