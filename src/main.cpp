@@ -8,6 +8,8 @@
 #define Second2Day 1.1574074074074073e-05
 #define MJD_1970 40587.0
 
+#include "slalib.h"
+#include <sstream>
 #include <iostream>
 #include "PointModel.h"
 #include <math.h>
@@ -62,6 +64,7 @@ void setPointingModelParams(vt::main::VirtualTelescope &vt) {
     //pmp.print();
     pmp.fetch();
     vt.setPointingModel(pmp);
+    pmp.guidingA=pmp.guidingB=0;
 }
 
 void updateWeather(vt::main::VirtualTelescope &vt) {
@@ -76,12 +79,14 @@ void updateTargetParams(vt::main::VirtualTelescope &vt) {
     vt.setTarget({FK5,
                   2000.0,
                   0.626,
-                  NASMYTH_L});
+                  NASMYTH_L,
+                  0.0});
 
     vt.setPointOrig({FK5,
                      2000.0,
                      0.626,
-                     NASMYTH_L});
+                     NASMYTH_L,
+                     0.0});
 }
 
 
@@ -111,7 +116,7 @@ int main()
     //init------------------
     vt.init();
 
-    double cood[] = {5.0,1.0};
+    double cood[] = {5.964,1.0};
     vt.targetCoordenates(cood);
 
     std::cout << std::setprecision(15) << std::endl;
@@ -130,6 +135,7 @@ int main()
         vt.mediumUpdate();
 
         //sky to enc------------------
+/*
         double enc_roll, enc_pitch,  enc_rma;
         vt.vtSkyToEnc (cood[0],cood[1],
                        0, 0,
@@ -142,6 +148,44 @@ int main()
         std::cout << "Elv demand\t\t=\t" <<  enc_pitch*(180/M_PI) << " degrees" <<std::endl;
         std::cout << "rotator demand\t=\t" <<  enc_rma*(180/M_PI) << " degrees" <<std::endl;
         std::cout << std::endl;
+*/
+
+
+        double sky_longitude,sky_latitude;
+        vt.vtEncToSky(M_PI+(35)*(M_PI/180.0),
+                      (43)*(M_PI/180.0),
+                      (118)*(M_PI/180.0),
+                        0.0,
+                        0.0,
+                        sky_longitude,
+                        sky_latitude);
+
+        char sign;
+        int conv[4];
+        std::ostringstream o0;
+        std::ostringstream o1;
+        std::ostringstream o2;
+
+
+        //ST
+        slaCr2tf (4,vt.getSideralTime(), &sign, conv);
+        o0<<sign<<conv[0]<<" "<<conv[1]<<" "<<conv[2]<<"."<<conv[3];
+
+        //RA
+        slaDr2tf (4, sky_longitude, &sign, conv);
+        o1<<conv[0]<<" "<<conv[1]<<" "<<conv[2]<<"."<<conv[3];
+        o1<<" ";
+
+        //Dec
+        slaDr2af (4,sky_latitude, &sign, conv);
+        o2<<sign<<conv[0]<<" "<<conv[1]<<" "<<conv[2]<<"."<<conv[3];
+
+        std::cout << "timestamp\t\t=\t" <<  taiMjd << " MJD(TAI)" <<std::endl;
+        std::cout << "sidereal time\t=\t" <<  o0.str() << " HH:mm:ss" <<std::endl;
+        std::cout << "RA demand\t\t=\t" <<  o1.str() << " HH:mm:ss" <<std::endl;
+        std::cout << "DEC demand\t\t=\t" <<  o2.str() << " DD:mm:ss" <<std::endl;
+        std::cout << std::endl;
+
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }

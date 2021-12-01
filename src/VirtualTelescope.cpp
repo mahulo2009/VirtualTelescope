@@ -222,7 +222,7 @@ void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll,
 
     int nIter=0;
     bool solutionConverged = false;
-    double newroll, newpitch, newrma;
+    double newroll=0, newpitch=0, newrma=0;
 
     while (!solutionConverged && nIter<max_iterations)
     {
@@ -267,14 +267,14 @@ void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll,
 
         tcsRotator (
                 //Input
-                aimvect[0],                                              //AIM x-coordinate
+                aimvect[0],                                             //AIM x-coordinate
                 aimvect[1],                                             //AIM y-coordinate
                 aimvect[2],                                             //AIM z-coordinate
                 pointOrig_.focalStation,                                //rotator location
                 newrma,                                                 //predicted rotator demand
                 0,                                                      //FALSE/TRUE = above/below pole
-                enc_roll,                                               //demand roll
-                enc_pitch,                                              //demand pitch
+                newroll,                                                //demand roll
+                newpitch,                                               //demand pitch
                 po_x,                                                   //pointing-origin x (in focal lengths) todo scale
                 po_y,                                                   //pointing-origin y (in focal lengths) todo scale
                 mediumCtx_.ia,                                          //roll zero point
@@ -294,7 +294,7 @@ void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll,
                 const_cast<double (*)[3]>(mediumCtx_.rotatorSPM2_i),    //inverse SPM #2 for the rotator
                 pointOrig_.ipa,                                         //requested Instrument Position Angle
                 //Output
-                &enc_rma,                                               //required rotator mechanical angle
+                &newrma,                                                //required rotator mechanical angle
                 &retval                                                 //status: 0=OK
         );
 
@@ -315,8 +315,81 @@ void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll,
 
     std::cout << "----------------------------VirtualTelescope::vtSkyToEnc END" << std::endl;
     */
-
 }
+
+void vt::main::VirtualTelescope::vtEncToSky(double mount_roll,
+                                            double mount_pitch,
+                                            double rma,
+                                            double po_x,
+                                            double po_y,
+                                            double &sky_longitude,
+                                            double &sky_latitude) const {
+
+    //make the transformation
+    tcsVTsky (
+            mount_roll,
+            mount_pitch,
+            pointOrig_.focalStation,
+            rma,
+            po_x,
+            po_y,
+            const_cast<double (*)[3]>(mediumCtx_.mountSPM1_i),
+            target_.frame,
+            sin(sideralTime_),
+            cos(sideralTime_),
+            const_cast<double (*)[3]>(mediumCtx_.mountSPM2_i),
+            mediumCtx_.ia,
+            mediumCtx_.ib,
+            mediumCtx_.np,
+            mediumCtx_.xt,
+            mediumCtx_.yt,
+            mediumCtx_.zt,
+            pointingModel_.guidingA,
+            pointingModel_.guidingB,
+            &sky_longitude,
+            &sky_latitude
+    );
+
+    sky_longitude = slaDranrm(sky_longitude);
+}
+
+void vt::main::VirtualTelescope::vtSkyToPointOrig(double sky_longitude,
+                                                  double sky_latitude,
+                                                  double mount_roll,
+                                                  double mount_pitch,
+                                                  double rma,
+                                                  double &po_x,
+                                                  double &po_y) const {
+
+    int retval;
+
+    tcsVTxy (
+            sky_longitude,
+            sky_latitude,
+            const_cast<double (*)[3]>(mediumCtx_.mountSPM1),
+            target_.frame,
+            sin(sideralTime_),
+            cos(sideralTime_),
+            const_cast<double (*)[3]>(mediumCtx_.mountSPM2),
+            pointOrig_.focalStation,
+            rma,
+            mount_roll,
+            mount_pitch,
+            mediumCtx_.ia,
+            mediumCtx_.ib,
+            mediumCtx_.np,
+            mediumCtx_.xt,
+            mediumCtx_.yt,
+            mediumCtx_.zt,
+            pointingModel_.guidingA,
+            pointingModel_.guidingB,
+            &po_x,
+            &po_y,
+            &retval
+    );
+}
+
+
 void vt::main::VirtualTelescope::setIers(const vt::main::IERS &iers) {
     iers_ = iers;
 }
@@ -358,4 +431,6 @@ void vt::main::VirtualTelescope::targetCoordenates(double targetCoordenates[2] )
 double vt::main::VirtualTelescope::getSideralTime() const {
     return sideralTime_;
 }
+
+
 

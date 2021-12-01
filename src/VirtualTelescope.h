@@ -120,7 +120,6 @@ namespace  vt {
                 void setPointingModel(const PointModel &pointingModel);
                 void setTelescopeStatus(const TelescopeStatus &telescopeStatus);
                 void setTaiMjd(double taiMjd);
-                //void setSideralTime(double sideralTime);
                 void setTarget(const Target &target);
                 void setPointOrig(const Target &pointOrig);
                 void targetCoordenates(double targetCoordenates[2]);
@@ -129,6 +128,24 @@ namespace  vt {
                                     double po_x, double po_y,
                                     double& enc_roll, double& enc_pitch, double& enc_rma,
                                     int max_iterations) const;
+
+                void vtEncToSky (double mount_roll,
+                                     double mount_pitch,
+                                     double rma,
+                                     double po_x,
+                                     double po_y,
+                                     double& sky_longitude,
+                                     double& sky_latitude) const;
+
+                void vtSkyToPointOrig (double sky_longitude,
+                                           double sky_latitude,
+                                           double mount_roll,
+                                           double mount_pitch,
+                                           double rma,
+                                           double& po_x,
+                                           double& po_y) const;
+
+
 
         private:
 
