@@ -1,193 +1,206 @@
 //
 // Created by mhuertas on 06/11/2021.
 //
-#include "VirtualTelescope.h"
 
-#define GCS_AS2R  4.8481368110953599358991410235794797595635330237270e-6
-#define Day2Second 86400.0
+#include "VirtualTelescopeSkyToEncoder.h"
+#include "VirtualTelescopeEncoderToSky.h"
+#include "VirtualTelescopeSkyToPointingOrigin.h"
+#include <vector>
+
 #define Second2Day 1.1574074074074073e-05
 #define MJD_1970 40587.0
 
-#include "slalib.h"
-#include <sstream>
-#include <iostream>
 #include "PointModel.h"
 #include <math.h>
 #include <ctime>
 #include <chrono>
-#include <thread>
-#include <iomanip>
 
-vt::main::GeoDataParams loadGeoParams()
+vt::main::GeographicalParameters loadGeoParams()
 {
-    //Set Geo Data
-    vt::main::GeoDataParams geoDataParams;
-    geoDataParams.meanLon=-0.3122447361322777670267214489285834133625030517578125;
-    geoDataParams.meanLat=0.5018798499051132511183936912857461720705032348632812;
-    geoDataParams.height=2267.83;
+    vt::main::GeographicalParameters geographicalParameters;
+    geographicalParameters.meanLon=-0.3122447361322777670267214489285834133625030517578125;
+    geographicalParameters.meanLat=0.5018798499051132511183936912857461720705032348632812;
+    geographicalParameters.height=2267.83;
 
-    return geoDataParams;
+    return geographicalParameters;
 }
 
-vt::main::TelescopeParams loadTelescopeParams()
+vt::main::OpticalParameters loadOpticalParameters()
 {
     //Set Telescope Params
-    vt::main::TelescopeParams telescopeParams;
-    telescopeParams.focal_len=170000.0;
-    telescopeParams.plate_scale=169887.94501735844196107771603192;
-    telescopeParams.distortionCoefficient=-382.4338085509681051168;
-    telescopeParams.refWaveLen=0.5;
-    telescopeParams.mountType=ALTAZ;
-    telescopeParams.gimbalX=0.0;
-    telescopeParams.gimbalY=0.0;
-    telescopeParams.gimbalZ=0.0;
-    telescopeParams.belowPole=false;
-    telescopeParams.aux[0]=telescopeParams.aux[1]=telescopeParams.aux[2]=0.0;
+    vt::main::OpticalParameters opticalParameters;
+    opticalParameters.focal_len=170000.0;
+    opticalParameters.plate_scale=169887.94501735844196107771603192;
+    opticalParameters.distortionCoefficient=-382.4338085509681051168;
+    opticalParameters.refWaveLen=0.5;
+    opticalParameters.mountType=ALTAZ;
 
-    return telescopeParams;
+    return opticalParameters;
 }
 
-void setIersParams(vt::main::VirtualTelescope &vt)
+vt::main::PolarMotionParameters loadPolarMotionParameters()
 {
-    //Set IERS data
-    vt.setIers({0.1213 * 4.84814e-6 ,
-                0.2464 * 4.84814e-6,
-                -0.10581 * Second2Day, //TODO THIS VALUES NOT OK REVIEW
-                37.0/Day2Second,
-                32.184/Day2Second});
+    vt::main::PolarMotionParameters polarMotionParameters;
+    polarMotionParameters.polarMotionX=0.1213 * 4.84814e-6;
+    polarMotionParameters.polarMotionY=0.2464 * 4.84814e-6;
+
+    return polarMotionParameters;
 }
 
-void setPointingModelParams(vt::main::VirtualTelescope &vt) {
-    //Set Pointing model data
+vt::main::TimeTransformParameters loadTimeTransformParameters()
+{
+    vt::main::TimeTransformParameters timeTransformParameters;
+    timeTransformParameters.ut1ToUtc=-0.10581 * Second2Day; //todo review this values
+    timeTransformParameters.taiToUtc=37.0 * Second2Day;
+    timeTransformParameters.ttToTai=32.184 * Second2Day;
+
+    return timeTransformParameters;
+}
+
+
+vt::main::PointModelParameters loadPointModelParameters()
+{
+    vt::main::PointModelParameters pointModelParameters;
+
     PointModel pmp;
     pmp.read("../../pointmodel.dat");
     //pmp.print();
     pmp.fetch();
-    vt.setPointingModel(pmp);
-    pmp.guidingA=pmp.guidingB=0;
+
+    pointModelParameters.maxTerms=pmp.maxTerms;
+    pointModelParameters.ntRoom=pmp.ntRoom;
+    std::copy(std::begin(pmp.model), std::end(pmp.model), std::begin(pointModelParameters.model));
+    std::copy(std::begin(pmp.coefValues), std::end(pmp.coefValues), std::begin(pointModelParameters.coefValues));
+    pointModelParameters.numLocalTerms=pmp.numLocalTerms;
+    pointModelParameters.numExplTerms=pmp.numExplTerms;
+    pointModelParameters.numTerms=pmp.numTerms;
+    std::copy(&pmp.coefNames[0][0], &pmp.coefNames[0][0]+100*9, &pointModelParameters.coefNames[0][0]);
+    std::copy(&pmp.coefFormat[0][0], &pmp.coefFormat[0][0]+100*9, &pointModelParameters.coefFormat[0][0]);
+
+    return pointModelParameters;
 }
+
 
 void updateWeather(vt::main::VirtualTelescope &vt) {
     //Set Weather data
-    vt.setWeather({273,
-                   1000.0,
-                   0.0,
-                   0.0065});
+    vt.updateWeatherData({273,
+                          1000.0,
+                          0.0,
+                          0.0065});
 }
 
 void updateTargetParams(vt::main::VirtualTelescope &vt) {
-    vt.setTarget({FK5,
-                  2000.0,
-                  0.626,
-                  NASMYTH_L,
-                  0.0});
-
-    vt.setPointOrig({FK5,
+    vt.updateTarget({FK5,
                      2000.0,
                      0.626,
                      NASMYTH_L,
-                     0.0});
+                     0.0,{5.964,1.0}});
+
+    vt.updatePointOriging({FK5,
+                           2000.0,
+                           0.626,
+                           NASMYTH_L,
+                           0.0,{0,0}});
 }
 
 
 int main()
 {
+    vt::main::TelescopeContext telescopeContext;
+    telescopeContext.geographicalParameters=loadGeoParams();
+    telescopeContext.opticalParameters=loadOpticalParameters();
+    telescopeContext.polarMotionParameters=loadPolarMotionParameters();
+    telescopeContext.timeTransformParameters=loadTimeTransformParameters();
+    telescopeContext.pointModelParameters=loadPointModelParameters();
 
-    vt::main::GeoDataParams geoDataParams= loadGeoParams();
-    vt::main::TelescopeParams telescopeParams =loadTelescopeParams();
-    vt::main::VirtualTelescope vt(geoDataParams,telescopeParams);
-    setIersParams(vt);
-    setPointingModelParams(vt);
-    updateWeather(vt);
-    updateTargetParams(vt);
+    vt::main::VirtualTelescope * virtualTelescopeSkyToEncoder = new vt::main::VirtualTelescopeSkyToEncoder(telescopeContext);
+    vt::main::VirtualTelescope * virtualTelescopeEncoderToSky = new vt::main::VirtualTelescopeEncoderToSky(telescopeContext);
+    vt::main::VirtualTelescope * virtualTelescopeSkyToPointingOrigin = new vt::main::VirtualTelescopeSkyToPointingOrigin(telescopeContext);
+
+    //Sky to Encoder
+    virtualTelescopeSkyToEncoder->
+        updateMountDemand({0,
+                                        0,
+                                        0});
+    virtualTelescopeSkyToEncoder->
+            updatePointOriging({FK5,
+                                2000.0,
+                                0.626,
+                                NASMYTH_L,
+                                0.0,{0,0}});
+
+    virtualTelescopeSkyToEncoder->
+            updateTarget({FK5,
+                          2000.0,
+                          0.626,
+                          NASMYTH_L,
+                          0.0,{5.964,1.0}});
+
+    //Encoder to Sky
+    virtualTelescopeEncoderToSky->
+        updateMountDemand({
+                                    M_PI+(35)*(M_PI/180.0),
+                                    (43)*(M_PI/180.0),
+                                    (118)*(M_PI/180.0) } );
+    virtualTelescopeEncoderToSky->
+            updatePointOriging({FK5,
+                                2000.0,
+                                0.626,
+                                NASMYTH_L,
+                                0.0,{0,0}});
+
+    virtualTelescopeEncoderToSky->
+            updateTarget({FK5,
+                          2000.0,
+                          0.626,
+                          NASMYTH_L,
+                          0.0,{0.0,0.0}});
+
+
+    //Sky to Poiting Origin
+    virtualTelescopeSkyToPointingOrigin->
+            updateMountDemand({
+                                      M_PI+(35)*(M_PI/180.0),
+                                      (43)*(M_PI/180.0),
+                                      (118)*(M_PI/180.0) } );
+    virtualTelescopeSkyToPointingOrigin->
+            updatePointOriging({FK5,
+                                2000.0,
+                                0.626,
+                                NASMYTH_L,
+                                0.0,{0,0}});
+
+    virtualTelescopeSkyToPointingOrigin->
+            updateTarget({FK5,
+                          2000.0,
+                          0.626,
+                          NASMYTH_L,
+                          0.0,{5.964,1.0}});
+
+
+    std::vector<vt::main::VirtualTelescope*> virtualTelescopes;
+    virtualTelescopes.push_back(virtualTelescopeSkyToEncoder);
+    virtualTelescopes.push_back(virtualTelescopeEncoderToSky);
+    virtualTelescopes.push_back(virtualTelescopeSkyToPointingOrigin);
 
     auto now = std::chrono::system_clock::now();
     time_t tai = std::chrono::system_clock::to_time_t( now );
-    double taiMjd = tai * (Second2Day)  + MJD_1970;
-    //Set Time data
-    vt.setTaiMjd(taiMjd);
+    double taiMjd = tai * (Second2Day) + 37 *(Second2Day) + MJD_1970;
 
-
-    //vt.setSideralTime(5.216);
-    //Set target data
-    vt.setTelescopeStatus({0,
-                                        0}); //todo check how to obtain these values
-
-    //init------------------
-    vt.init();
-
-    double cood[] = {5.964,1.0};
-    vt.targetCoordenates(cood);
-
-    std::cout << std::setprecision(15) << std::endl;
-    for (int i=0;i<60;i++)
+    for (auto vt : virtualTelescopes)
     {
-        auto now = std::chrono::system_clock::now();
-        time_t tai = std::chrono::system_clock::to_time_t( now );
-        double taiMjd = tai * (Second2Day) + 37 *(Second2Day) + MJD_1970;
-        //Set Time data
-        vt.setTaiMjd(taiMjd);
+        updateWeather(*vt);
+        vt->updateTaiMjd(taiMjd);
+        vt->init();
+    }
 
-        //slow------------------
-        vt.slowUpdate();
-
-        //medium------------------
-        vt.mediumUpdate();
-
-        //sky to enc------------------
-/*
-        double enc_roll, enc_pitch,  enc_rma;
-        vt.vtSkyToEnc (cood[0],cood[1],
-                       0, 0,
-                       enc_roll, enc_pitch, enc_rma,
-                       100);
-
-        std::cout << "timestamp\t\t=\t" <<  taiMjd << " MJD(TAI)" <<std::endl;
-        std::cout << "sidereal time\t=\t" <<  vt.getSideralTime() << " radians" <<std::endl;
-        std::cout << "Az demand\t\t=\t" <<  (M_PI-enc_roll)*(180/M_PI) << " degrees" <<std::endl;
-        std::cout << "Elv demand\t\t=\t" <<  enc_pitch*(180/M_PI) << " degrees" <<std::endl;
-        std::cout << "rotator demand\t=\t" <<  enc_rma*(180/M_PI) << " degrees" <<std::endl;
-        std::cout << std::endl;
-*/
-
-
-        double sky_longitude,sky_latitude;
-        vt.vtEncToSky(M_PI+(35)*(M_PI/180.0),
-                      (43)*(M_PI/180.0),
-                      (118)*(M_PI/180.0),
-                        0.0,
-                        0.0,
-                        sky_longitude,
-                        sky_latitude);
-
-        char sign;
-        int conv[4];
-        std::ostringstream o0;
-        std::ostringstream o1;
-        std::ostringstream o2;
-
-
-        //ST
-        slaCr2tf (4,vt.getSideralTime(), &sign, conv);
-        o0<<sign<<conv[0]<<" "<<conv[1]<<" "<<conv[2]<<"."<<conv[3];
-
-        //RA
-        slaDr2tf (4, sky_longitude, &sign, conv);
-        o1<<conv[0]<<" "<<conv[1]<<" "<<conv[2]<<"."<<conv[3];
-        o1<<" ";
-
-        //Dec
-        slaDr2af (4,sky_latitude, &sign, conv);
-        o2<<sign<<conv[0]<<" "<<conv[1]<<" "<<conv[2]<<"."<<conv[3];
-
-        std::cout << "timestamp\t\t=\t" <<  taiMjd << " MJD(TAI)" <<std::endl;
-        std::cout << "sidereal time\t=\t" <<  o0.str() << " HH:mm:ss" <<std::endl;
-        std::cout << "RA demand\t\t=\t" <<  o1.str() << " HH:mm:ss" <<std::endl;
-        std::cout << "DEC demand\t\t=\t" <<  o2.str() << " DD:mm:ss" <<std::endl;
-        std::cout << std::endl;
-
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    for (auto vt : virtualTelescopes)
+    {
+        vt->init();
+        vt->slowUpdate();
+        vt->mediumUpdate();
+        vt->fastUpdate();
+        vt->print();
     }
 
     return 0;
