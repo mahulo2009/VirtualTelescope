@@ -41,7 +41,8 @@ void vt::main::VirtualTelescope::init() {
               &geoData_.axisDistanceKm,                //distance from spin axis [km]
               &geoData_.equatorDistanceKm,             //distance from equator [km]
               &geoData_.diurnalAberration);            //diurnal aberration [radians]
-/*
+
+    /*
     std::cout << "telescopeParams_.azElToNominalMount[0][0] " << telescopeParams_.azElToNominalMount[0][0] << std::endl;
     std::cout << "geoData_.trueLon " << geoData_.trueLon << std::endl;
     std::cout << "geoData_.trueLat " << geoData_.trueLat<< std::endl;
@@ -50,9 +51,8 @@ void vt::main::VirtualTelescope::init() {
     std::cout << "geoData_.axisDistanceKm "<< geoData_.axisDistanceKm<< std::endl;
     std::cout << "geoData_.equatorDistanceKm " << geoData_.equatorDistanceKm<< std::endl;
     std::cout << "geoData_.diurnalAberration " << geoData_.diurnalAberration<< std::endl;
-
     std::cout << "----------------------------VirtualTelescope::init END" << std::endl;
-*/
+    */
 }
 
 void vt::main::VirtualTelescope::slowUpdate() {
@@ -60,7 +60,6 @@ void vt::main::VirtualTelescope::slowUpdate() {
     /*
     std::cout << "----------------------------VirtualTelescope::slowUpdate" << std::endl;
     std::cout << std::setprecision(15) << std::endl;
-
     std::cout << "iers_.ut1ToUtc " << iers_.ut1ToUtc << std::endl;
     std::cout << "iers_.taiToUtc " << iers_.taiToUtc << std::endl;
     std::cout << "iers_.ttToTai " << iers_.ttToTai << std::endl;
@@ -95,30 +94,26 @@ void vt::main::VirtualTelescope::slowUpdate() {
     double delta = taiMjd_ - slowCtx_.refTAI;
     sideralTime_ = slowCtx_.refLAST + delta*STRPD;
 
-
-
-/*
+    /*
     std::cout << "slowCtx_.refTAI " << slowCtx_.refTAI << std::endl;
     std::cout << "slowCtx_.refLAST " << slowCtx_.refLAST << std::endl;
     std::cout << "slowCtx_.refTT " << slowCtx_.refTT << std::endl;
     std::cout << "slowCtx_.refTTJ " << slowCtx_.refTTJ << std::endl;
     std::cout << "slowCtx_.refrA " << slowCtx_.refrA << std::endl;
     std::cout << "slowCtx_.refrB " << slowCtx_.refrB << std::endl;
-
-
     std::cout << "----------------------------VirtualTelescope::slowUpdate END" << std::endl;
-*/
+    */
 
 }
 
 void vt::main::VirtualTelescope::mediumUpdate() {
-/*
+
+    /*
     std::cout << "----------------------------VirtualTelescope::mediumUpdate" << std::endl;
     std::cout << std::setprecision(15) << std::endl;
-
     std::cout << "taiMjd_ " << taiMjd_<< std::endl;
     std::cout << "mountType " << telescopeParams_.mountType << std::endl;
-*/
+    */
 
     int ret = tcsMedium (
             //Input
@@ -185,7 +180,8 @@ void vt::main::VirtualTelescope::mediumUpdate() {
             mediumCtx_.rotatorSPM2,                 //SPM #2, rotator
             mediumCtx_.rotatorSPM2_i                //inverse SPM #2, rotator
     );
-/*
+
+    /*
     std::cout << mediumCtx_.ib<< std::endl;
     std::cout << mediumCtx_.np<< std::endl;
     std::cout << mediumCtx_.xt<< std::endl;
@@ -202,7 +198,7 @@ void vt::main::VirtualTelescope::mediumUpdate() {
     std::cout << mediumCtx_.rotatorSPM2_i[0][0]<< std::endl;
 
     std::cout << "----------------------------VirtualTelescope::slowUpdate END" << std::endl;
-*/
+    */
 }
 
 void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll,
@@ -308,7 +304,8 @@ void vt::main::VirtualTelescope::vtSkyToEnc (double sky_roll,
             enc_rma = newrma;
         }
     }
-/*
+
+    /*
     std::cout << "enc_roll " << enc_roll  << std::endl;
     std::cout << "enc_pitch " << enc_pitch   << std::endl;
     std::cout << "enc_rma " << enc_rma  << std::endl;
@@ -417,11 +414,6 @@ void vt::main::VirtualTelescope::setTarget(const vt::main::Target &target) {
 void vt::main::VirtualTelescope::setPointOrig(const vt::main::Target &pointOrig) {
     pointOrig_ = pointOrig;
 }
-/*
-void vt::main::VirtualTelescope::setSideralTime(double sideralTime) {
-    sideralTime_ = sideralTime;
-}
-*/
 
 void vt::main::VirtualTelescope::targetCoordenates(double targetCoordenates[2] ) {
     targetCoordenates_[0]=targetCoordenates[0];
@@ -431,6 +423,3 @@ void vt::main::VirtualTelescope::targetCoordenates(double targetCoordenates[2] )
 double vt::main::VirtualTelescope::getSideralTime() const {
     return sideralTime_;
 }
-
-
-
