@@ -65,6 +65,8 @@ void vt::main::VirtualTelescopeEncoderToSky::print() {
     o2<<sign<<conv[0]<<" "<<conv[1]<<" "<<conv[2]<<"."<<conv[3];
 
     std::cout << "VirtualTelescopeEncoderToSky: " << std::endl;
+    std::cout << "RA: "<< sky_longitude << std::endl;
+    std::cout << "DEC: "<< sky_latitude << std::endl;
     //std::cout << "timestamp\t\t=\t" <<  taiMjd << " MJD(TAI)" <<std::endl; todo
     std::cout << "sidereal time\t=\t" <<  o0.str() << " HH:mm:ss" <<std::endl;
     std::cout << "RA demand\t\t=\t" <<  o1.str() << " HH:mm:ss" <<std::endl;

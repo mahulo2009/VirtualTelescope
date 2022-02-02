@@ -37,6 +37,9 @@ if (ENABLE_UNIT_TESTS)
             VirtualTelescope
             gsl
             gslcblas
+            tcsPK
+            slalib
+            sla
             gtest_main
             )
 

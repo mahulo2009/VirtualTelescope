@@ -181,12 +181,13 @@ void vt::main::VirtualTelescope::mediumUpdate() {
             mediumCtx_.rotatorSPM2_i                //inverse SPM #2, rotator
     );
 
-    /*
+    std::cout << mediumCtx_.ia<< std::endl;
     std::cout << mediumCtx_.ib<< std::endl;
     std::cout << mediumCtx_.np<< std::endl;
     std::cout << mediumCtx_.xt<< std::endl;
     std::cout << mediumCtx_.yt<< std::endl;
     std::cout << mediumCtx_.zt<< std::endl;
+/*
     std::cout << mediumCtx_.azElToMount[0][0]<< std::endl;
     std::cout << mediumCtx_.mountSPM1[0][0]<< std::endl;
     std::cout << mediumCtx_.mountSPM1_i[0][0]<< std::endl;
@@ -197,8 +198,9 @@ void vt::main::VirtualTelescope::mediumUpdate() {
     std::cout << mediumCtx_.rotatorSPM2[0][0]<< std::endl;
     std::cout << mediumCtx_.rotatorSPM2_i[0][0]<< std::endl;
 
-    std::cout << "----------------------------VirtualTelescope::slowUpdate END" << std::endl;
+
     */
+    std::cout << "----------------------------VirtualTelescope::slowUpdate END" << std::endl;
 }
 
 void vt::main::VirtualTelescope::updateWeatherData(const WeatherData &weatherData) {

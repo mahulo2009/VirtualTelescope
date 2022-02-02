@@ -70,8 +70,38 @@ void PointModel::processToken_(std::string &token) {
 }
 
 void PointModel::print() {
+
+    std::cout <<  maxTerms << std::endl;
+    std::cout << ntRoom << std::endl;
+    for (auto t : model ) {
+        std::cout << t << ",";
+    }
+    std::cout << std::endl;
+
+    //std::cout << coefValues[100];
+    for (auto c : coefValues )
+        std::cout << c << ",";
+    std::cout << std::endl;
+
+
+    std::cout << numLocalTerms<< std::endl;
+    std::cout << numExplTerms<< std::endl;
+    std::cout << numTerms<< std::endl;
+    //std::cout << coefNames[100][9];
+    for (auto n : coefNames )
+        std::cout << n << ",";
+    std::cout << std::endl;
+
+    //std::cout << coefFormat[100][9];
+    for (auto f : coefFormat )
+        std::cout << f << ",";
+    std::cout << std::endl;
+
+
+
     for (auto term : terms_)
         std::cout << term << std::endl;
+
 }
 
 void PointModel::fetch() {

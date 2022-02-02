@@ -64,8 +64,8 @@ vt::main::PointModelParameters loadPointModelParameters()
 
     PointModel pmp;
     pmp.read("../../pointmodel.dat");
-    //pmp.print();
     pmp.fetch();
+    //pmp.print();
 
     pointModelParameters.maxTerms=pmp.maxTerms;
     pointModelParameters.ntRoom=pmp.ntRoom;
@@ -88,21 +88,6 @@ void updateWeather(vt::main::VirtualTelescope &vt) {
                           0.0,
                           0.0065});
 }
-
-void updateTargetParams(vt::main::VirtualTelescope &vt) {
-    vt.updateTarget({FK5,
-                     2000.0,
-                     0.626,
-                     NASMYTH_L,
-                     0.0,{5.964,1.0}});
-
-    vt.updatePointOriging({FK5,
-                           2000.0,
-                           0.626,
-                           NASMYTH_L,
-                           0.0,{0,0}});
-}
-
 
 int main()
 {
